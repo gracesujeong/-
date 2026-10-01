@@ -1,1 +1,42 @@
-index.html [generated with file_gen tool]
+<!-- 입력 폼 -->
+<section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+  <h2 class="font-bold text-gray-700 flex items-center gap-2 text-base">
+    <span>📝</span> 새 일정 / 아이디어 입력
+  </h2>
+  
+  <form id="schedule-form" class="space-y-4">
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 mb-1">구분</label>
+      <select id="category" class="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="취재 일정">취재 일정</option>
+        <option value="아이디어 메모">아이디어 메모</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 mb-1">날짜 / 장소</label>
+      <input type="text" id="location" placeholder="예: 10월 10일 송도 재외동포 웰컴센터" class="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 mb-1">내용 / 제목</label>
+      <input type="text" id="title" required placeholder="예: 한국어 말하기 취재 및 현장음 녹음" class="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <button type="submit" id="save-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition duration-200 active:scale-[0.99]">
+      저장하기
+    </button>
+  </form>
+</section>
+
+<!-- 목록 세션 -->
+<section class="space-y-3">
+  <h2 class="font-bold text-gray-700 flex items-center gap-2 text-base px-1">
+    <span>📋</span> 저장된 항목 리스트
+  </h2>
+  <div id="schedule-list" class="space-y-2.5">
+    <div class="p-6 text-center text-gray-400 text-sm bg-white rounded-2xl border border-gray-100">
+      데이터를 불러오는 중입니다...
+    </div>
+  </div>
+</section>
