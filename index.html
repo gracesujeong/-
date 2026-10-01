@@ -62,7 +62,7 @@
 
           <div>
             <label class="block text-xs font-semibold text-slate-500 mb-1">날짜 / 장소</label>
-            <input type="text" id="location" placeholder="예: 10월 10일 송도 재외동포 웰컴센터" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="location" placeholder="예: 10월 10일 토 11시 송도 재외동포" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
 
           <div>
@@ -99,8 +99,8 @@
     // 💡 비밀번호: 1012
     const MY_SECRET_PIN = "1012";
 
-    // 💡 안정적인 동기화 클라우드 API 엔드포인트
-    const API_URL = "https://api.jsonbin.io/v3/b/66fa2eb5e41b4d34e4392683";
+    // 💡 오픈 백엔드 서버 URL (수정 가능한 전용 저장소)
+    const API_URL = "https://api.npoint.io/c5a176cb66cdfa0e0719";
 
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
@@ -119,7 +119,7 @@
       showApp();
     }
 
-    // 로그인
+    // 로그인 처리
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       if (pinInput.value === MY_SECRET_PIN) {
@@ -142,9 +142,7 @@
     async function loadItems() {
       if (isSaving) return;
       try {
-        const res = await fetch(API_URL + "/latest", {
-          headers: { "X-Bin-Meta": "false" }
-        });
+        const res = await fetch(API_URL);
         if (!res.ok) return;
         const data = await res.json();
         renderList(Array.isArray(data) ? data : []);
@@ -203,7 +201,7 @@
 
       try {
         let currentItems = [];
-        const getRes = await fetch(API_URL + "/latest", { headers: { "X-Bin-Meta": "false" } });
+        const getRes = await fetch(API_URL);
         if (getRes.ok) {
           const fetched = await getRes.json();
           if (Array.isArray(fetched)) currentItems = fetched;
@@ -212,21 +210,21 @@
         const newItem = { category, location, title, date: dateStr };
         currentItems.unshift(newItem);
 
-        const putRes = await fetch(API_URL, {
-          method: 'PUT',
+        const postRes = await fetch(API_URL, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(currentItems)
         });
 
-        if (putRes.ok) {
+        if (postRes.ok) {
           document.getElementById('location').value = '';
           document.getElementById('title').value = '';
           renderList(currentItems);
         } else {
-          alert("저장 실패. 잠시 후 다시 시도해 주세요.");
+          alert("저장 중 오류가 발생했습니다.");
         }
       } catch (err) {
-        alert("네트워크 오류가 발생했습니다.");
+        alert("네트워크 통신 에러가 발생했습니다.");
       } finally {
         isSaving = false;
         submitBtn.disabled = false;
@@ -239,13 +237,13 @@
       if (!confirm('이 항목을 삭제하시겠습니까?')) return;
       isSaving = true;
       try {
-        const getRes = await fetch(API_URL + "/latest", { headers: { "X-Bin-Meta": "false" } });
+        const getRes = await fetch(API_URL);
         if (getRes.ok) {
           let currentItems = await getRes.json();
           if (Array.isArray(currentItems)) {
             currentItems.splice(indexToDelete, 1);
             await fetch(API_URL, {
-              method: 'PUT',
+              method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(currentItems)
             });
