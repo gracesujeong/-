@@ -96,11 +96,11 @@
   </div>
 
   <script>
-    // 💡 변경된 비밀번호: 1012
+    // 💡 비밀번호: 1012
     const MY_SECRET_PIN = "1012";
 
-    // 💡 실시간 클라우드 서버 엔드포인트
-    const DB_ENDPOINT = "https://kvdb.io/2H3uD3w2uG79GfH63QJz7p/reporter_data";
+    // 💡 안정적인 동기화 클라우드 API 엔드포인트
+    const API_URL = "https://api.jsonbin.io/v3/b/66fa2eb5e41b4d34e4392683";
 
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
@@ -112,12 +112,14 @@
     const itemCount = document.getElementById('item-count');
     const submitBtn = document.getElementById('submit-btn');
 
-    // 기기 영구 인증 확인 (localStorage 이용)
+    let isSaving = false;
+
+    // 기기 영구 인증 확인
     if (localStorage.getItem('my_device_authenticated') === 'true') {
       showApp();
     }
 
-    // 최초 1회 인증 진행
+    // 로그인
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       if (pinInput.value === MY_SECRET_PIN) {
@@ -133,25 +135,25 @@
       loginModal.classList.add('hidden');
       appContent.classList.remove('hidden');
       loadItems();
-      setInterval(loadItems, 2000); // 2초마다 실시간 동기화
+      setInterval(loadItems, 2000); // 2초마다 자동 동기화
     }
 
-    // 서버 데이터 불러오기
+    // 데이터 불러오기
     async function loadItems() {
+      if (isSaving) return;
       try {
-        const res = await fetch(DB_ENDPOINT);
-        if (!res.ok) {
-          if (res.status === 404) renderList([]);
-          return;
-        }
-        const items = await res.json();
-        renderList(items || []);
+        const res = await fetch(API_URL + "/latest", {
+          headers: { "X-Bin-Meta": "false" }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        renderList(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("동기화 통신 오류:", err);
+        console.error("동기화 오류:", err);
       }
     }
 
-    // 화면 목록 출력
+    // 화면 그리기
     function renderList(items) {
       itemCount.textContent = `총 ${items.length}개`;
 
@@ -183,7 +185,7 @@
       `).join('');
     }
 
-    // 데이터 추가 저장
+    // 저장하기
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const category = document.getElementById('category').value;
@@ -192,6 +194,7 @@
 
       if (!title) return;
 
+      isSaving = true;
       submitBtn.disabled = true;
       submitBtn.innerText = "저장 중...";
 
@@ -200,48 +203,59 @@
 
       try {
         let currentItems = [];
-        const res = await fetch(DB_ENDPOINT);
-        if (res.ok) {
-          currentItems = await res.json() || [];
+        const getRes = await fetch(API_URL + "/latest", { headers: { "X-Bin-Meta": "false" } });
+        if (getRes.ok) {
+          const fetched = await getRes.json();
+          if (Array.isArray(fetched)) currentItems = fetched;
         }
 
         const newItem = { category, location, title, date: dateStr };
         currentItems.unshift(newItem);
 
-        await fetch(DB_ENDPOINT, {
-          method: 'POST',
+        const putRes = await fetch(API_URL, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(currentItems)
         });
 
-        document.getElementById('location').value = '';
-        document.getElementById('title').value = '';
-        await loadItems();
+        if (putRes.ok) {
+          document.getElementById('location').value = '';
+          document.getElementById('title').value = '';
+          renderList(currentItems);
+        } else {
+          alert("저장 실패. 잠시 후 다시 시도해 주세요.");
+        }
       } catch (err) {
-        alert("저장 실패: 네트워크 상태를 확인해주세요.");
+        alert("네트워크 오류가 발생했습니다.");
       } finally {
+        isSaving = false;
         submitBtn.disabled = false;
         submitBtn.innerText = "💾 저장하기";
       }
     });
 
-    // 데이터 삭제
+    // 삭제하기
     async function deleteItem(indexToDelete) {
       if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+      isSaving = true;
       try {
-        const res = await fetch(DB_ENDPOINT);
-        if (res.ok) {
-          let currentItems = await res.json() || [];
-          currentItems.splice(indexToDelete, 1);
-          await fetch(DB_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentItems)
-          });
-          await loadItems();
+        const getRes = await fetch(API_URL + "/latest", { headers: { "X-Bin-Meta": "false" } });
+        if (getRes.ok) {
+          let currentItems = await getRes.json();
+          if (Array.isArray(currentItems)) {
+            currentItems.splice(indexToDelete, 1);
+            await fetch(API_URL, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(currentItems)
+            });
+            renderList(currentItems);
+          }
         }
       } catch (err) {
         alert("삭제 실패");
+      } finally {
+        isSaving = false;
       }
     }
   </script>
